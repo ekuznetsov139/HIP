@@ -42,12 +42,12 @@ THE SOFTWARE.
 #define __device__ __attribute__((hc))
 
 #if GENERIC_GRID_LAUNCH == 0
-#define __global__ __attribute__((hc_grid_launch)) __attribute__((used))
+#define __global__ __attribute__((hc_grid_launch)) __attribute__((used)) __attribute__((amdgpu_flat_work_group_size(64, 1024)))
 #else
 #if __hcc_workweek__ >= 17481
-#define __global__ __attribute__((annotate("__HIP_global_function__"), cpu, hc, used))
+#define __global__ __attribute__((annotate("__HIP_global_function__"), cpu, hc, used)) __attribute__((amdgpu_flat_work_group_size(64, 1024)))
 #else
-#define __global__ __attribute__((hc, used))
+#define __global__ __attribute__((hc, used)) __attribute__((amdgpu_flat_work_group_size(64, 1024)))
 #endif
 #endif  // GENERIC_GRID_LAUNCH
 
@@ -66,7 +66,7 @@ THE SOFTWARE.
 
 #define __host__ __attribute__((host))
 #define __device__ __attribute__((device))
-#define __global__ __attribute__((global))
+#define __global__ __attribute__((global)) __attribute__((amdgpu_flat_work_group_size(64, 1024)))
 #define __shared__ __attribute__((shared))
 #define __constant__ __attribute__((constant))
 
