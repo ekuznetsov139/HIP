@@ -114,7 +114,6 @@ void* allocAndSharePtr(const char* msg, size_t sizeBytes, ihipCtx_t* ctx, bool s
     void* ptr = nullptr;
 
     auto device = ctx->getWriteableDevice();
-
 #if (__hcc_workweek__ >= 17332)
     if (alignment != 0) {
         ptr = hc::am_aligned_alloc(sizeBytes, device->_acc, amFlags, alignment);
@@ -214,7 +213,6 @@ hipError_t ihipHostFree(TlsData *tls, void* ptr) {
     // Synchronize to ensure all work has finished.
     ihipGetTlsDefaultCtx()->locked_waitAllStreams();  // ignores non-blocking streams, this waits
                                                       // for all activity to finish.
-
     hipError_t hipStatus = hipErrorInvalidValue;
     if (ptr) {
         hc::accelerator acc;
@@ -1505,10 +1503,9 @@ namespace {
             static
             __global__
             void clean(T* p, std::size_t nh, std::size_t nb, int x) noexcept {
-                p[(threadIdx.x < nh) ? threadIdx.x : (threadIdx.x - nh + nb)] = x;
+                p[(threadIdx.x < nh) ? threadIdx.x : (threadIdx.x + nb)] = x;
             }
         };
-
         hipLaunchKernelGGL(Cleaner::clean, 1, n_head + n_tail, 0, stream,
                            dst, n_head,
                            n_body * sizeof(std::uint32_t) / sizeof(T), value);
@@ -1538,7 +1535,7 @@ hipError_t ihipMemsetSync(void* dst, int  value, size_t count, hipStream_t strea
                     static_cast<std::uint8_t*>(dst);
                 n -= n_head;
                 n /= sizeof(std::uint32_t);
-                n_tail = count % sizeof(std::uint32_t);
+                n_tail = (count - n_head) % sizeof(std::uint32_t);
                 break;
             case ihipMemsetDataTypeShort:
                 value &= 0xffff;
@@ -1952,7 +1949,6 @@ hipError_t hipMemPtrGetInfo(void* ptr, size_t* size) {
 
 hipError_t hipFree(void* ptr) {
     HIP_INIT_SPECIAL_API(hipFree, (TRACE_MEM), ptr);
-
     hipError_t hipStatus = hipErrorInvalidDevicePointer;
 
     if (ptr) {
