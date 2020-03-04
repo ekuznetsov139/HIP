@@ -242,7 +242,8 @@ ihipStream_t::ihipStream_t(ihipCtx_t* ctx, hc::accelerator_view av, unsigned int
     : _id(0),  // will be set by add function.
       _flags(flags),
       _ctx(ctx),
-      _criticalData(this, av) {
+      _criticalData(this, av),
+      pending_callbacks(0) {
     unsigned schedBits = ctx->_ctxFlags & hipDeviceScheduleMask;
 
     switch (schedBits) {
@@ -1495,7 +1496,6 @@ hipError_t ihipStreamSynchronize(TlsData *tls, hipStream_t stream) {
 
 void ihipStreamCallbackHandler(ihipStreamCallback_t* cb) {
     hipError_t e = hipSuccess;
-
     // Synchronize stream
     tprintf(DB_SYNC, "ihipStreamCallbackHandler wait on stream %s\n",
             ToString(cb->_stream).c_str());
@@ -1504,6 +1504,7 @@ void ihipStreamCallbackHandler(ihipStreamCallback_t* cb) {
 
     // Call registered callback function
     cb->_callback(cb->_stream, e, cb->_userData);
+    cb->_stream->callbackCountDecrement();
     delete cb;
 }
 

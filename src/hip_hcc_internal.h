@@ -607,6 +607,9 @@ class ihipStream_t {
     // Before calling this function, stream must be resolved from "0" to the actual stream:
     bool isDefaultStream() const { return _id == 0; };
 
+    void callbackCountIncrement() { pending_callbacks++; }
+    void callbackCountDecrement() { pending_callbacks--; }
+    void waitForCallbacks() { while(pending_callbacks.load() != 0); }
    public:
     //---
     // Public member vars - these are set at initialization and never change:
@@ -637,6 +640,8 @@ class ihipStream_t {
     // Friends:
     friend std::ostream& operator<<(std::ostream& os, const ihipStream_t& s);
     friend hipError_t hipStreamQuery(hipStream_t);
+
+    std::atomic<int> pending_callbacks;
 
     ScheduleMode _scheduleMode;
 };
