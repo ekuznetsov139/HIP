@@ -1490,6 +1490,7 @@ hipError_t ihipStreamSynchronize(TlsData *tls, hipStream_t stream) {
         stream->locked_wait();
         e = hipSuccess;
     }
+    stream->waitForCallbacks();
 
     return e;
 }
@@ -1500,7 +1501,15 @@ void ihipStreamCallbackHandler(ihipStreamCallback_t* cb) {
     tprintf(DB_SYNC, "ihipStreamCallbackHandler wait on stream %s\n",
             ToString(cb->_stream).c_str());
     GET_TLS();
-    e = ihipStreamSynchronize(tls, cb->_stream);
+
+    //e = ihipStreamSynchronize(tls, cb->_stream);
+    if (cb->_stream == hipStreamNull) {
+        ihipCtx_t* ctx = ihipGetTlsDefaultCtx();
+        ctx->locked_syncDefaultStream(true /*waitOnSelf*/, true /*syncToHost*/);
+    } else {
+        cb->_stream->locked_wait();
+        e = hipSuccess;
+    }
 
     // Call registered callback function
     cb->_callback(cb->_stream, e, cb->_userData);
